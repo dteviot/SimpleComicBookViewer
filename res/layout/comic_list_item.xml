@@ -1,0 +1,14 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+   android:id="@+id/comicListItemLinearLayout" android:layout_width="match_parent" 
+   android:layout_height="match_parent" 
+   android:background="@android:color/white">
+   <ImageView android:id="@+id/comicTitleImageView"
+      android:layout_width="100dp" android:layout_height="100dp"
+      android:layout_gravity="center_vertical" 
+      android:layout_margin="5dp"></ImageView>
+   <Button android:id="@+id/readButton"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content" 
+      android:layout_gravity="center_vertical"
+      android:text="@string/button_open"></Button>
+</LinearLayout>

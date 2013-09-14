@@ -1,0 +1,17 @@
+<resources>
+
+    <string name="app_name">Simple Comic Book Viewer</string>
+    <string name="menu_chapters">Chapters</string>
+    <string name="title_activity_main">Comic Viewer</string>
+    <string name="menu_pick_comic">Pick Comic</string>
+    <string name="not_implemented">Not implemented (yet!)</string>
+    <string name="button_open">Read</string>
+    <string name="menu_bookmark">Bookmark</string>
+    <string name="bookmark_dialog_title">Set/Restore Bookmark</string>
+    <string name="bookmark_dialog_set_button">Set</string>
+    <string name="bookmark_dialog_restore_button">Restore</string>
+    <string name="no_comics_found">No Comics Found</string>
+    <string name="last_page">First or Last page</string>
+    <string name="sd_card_not_mounted">SD card not mounted</string>
+    <string name="no_chapters_found">No chapters found</string>
+</resources>

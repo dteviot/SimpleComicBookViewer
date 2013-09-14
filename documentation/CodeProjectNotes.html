@@ -1,0 +1,569 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=windows-1252">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="LibreOffice 3.6  (Windows)">
+	<META NAME="CREATED" CONTENT="20121125;9305927">
+	<META NAME="CHANGED" CONTENT="20121202;16123856">
+	<STYLE TYPE="text/css">
+	</STYLE>
+</HEAD>
+<BODY LANG="en-NZ" DIR="LTR">
+<H1>Simple Comic Book Viewer for Android</H1>
+<P>
+</P>
+<H2 CLASS="western">Introduction</H2>
+<P>This is an Android application that, I believe, contains just
+slightly more than the minimum necessary feature set to be able to
+view .cbz format files.</P>
+<img title="ListComicsActivity screenshot" src="comicBookViewer.jpg" border="0" complete="true" />
+<P>These features are:</P>
+<UL>
+	<LI>A &quot;list view&quot;of the .cbz
+	files on the SD card, as shown in the above image. For each file: 
+	<UL>
+		<LI>Show a thumbnail of the first
+		page of the comic. 
+		<LI>Show the name of the file. 
+		<LI>Allow user to start viewing the
+		rest of the file. 
+	</UL>
+    </LI>
+	<LI>A &quot;viewer&quot; to read the
+	.cbz file. 
+	<UL>
+		<LI>Viewer will show one page (or
+		part of page) at a time.</LI>
+		<LI>Fling gestures are used to move
+		to the next or previous page.</LI> 
+		<LI>Double tap will zoom in on a part
+		of the page.</LI>
+		<LI>Pinch can be used to zoom in and
+		out.</LI> 
+		<LI>When zoomed in, image can be
+		scrolled using drag gestures.</LI>
+	</UL>
+	<LI>User can set a bookmark (Comic
+	book &amp; page). When application is initially started, the
+	application will go to the bookmark.</LI>
+	<LI>A menu, to allow user to set the bookmark, return to the
+	bookmark, or go to a list view of .cbz files to select a different
+	comic to view.</LI>
+</UL>
+<P>
+</P>
+<P>In terms of Android features, this code demonstrates how to:</P>
+<UL>
+	<LI>Enumerate files on a SD card</LI>
+	<LI>Read a zip file.</LI>
+	<LI>Read (and resize) a bitmap from a
+	file</LI>
+	<LI>Show a bitmap, with zoom, scroll,
+	pinch zoom, and fling functionality.</LI>
+	<LI>Handle the user changing the
+	screen orientation between landscape and portrait.</LI>
+	<LI>Use intents to pass data between
+	activities in an Android application.</LI>
+	<LI>Save user settings to persistent
+	storage, and retrieve them later.</LI>
+	<LI>Provide a menu.	</LI>
+	<LI>Customize the layout of the items
+	of a ListActivity</LI>
+	<LI>Create a simple dialog.</LI>
+	<LI>Do work in on a background thread using AsyncTask</LI>
+</UL>
+<P></P>
+<P>Warning, this is the second Android application I've written, and
+my first Code Project article, so there are probably many things I've
+done that could be improved. Feedback is welcomed.</P>
+<P>
+</P>
+<H2>Using the code</H2>
+<P>If you don't know how to set up Eclipse and the Android SDK, go 
+<a href="http://developer.android.com/sdk/installing.html">here</a>
+ for instructions.</P>
+<P>Download the project, unzip and import into Eclipse.  Requires minimum of Android 2.3
+</P>
+<H2>Comic Book File Format</H2>
+<P>There are actually a number of formats for storing comic books.
+The simplest (and easiest for us) is 
+<a href="http://en.wikipedia.org/wiki/Comic_book_archive">.cbz</a>. 
+It's a set of image files
+(usually PNG or JPEG) that have been packed into a zip archive file.
+Each image is a page of the comic.</P>
+<P>
+</P>
+<P>CbzComic.java in this project handles decoding the contents of
+.cbz files. From the preceding .cbz description, a .cbz archive file
+can be thought of as an array of Bitmaps. So, the most important
+functions of the CbzComic class are &quot;Get Bitmap representing
+page N&quot; and &quot;Get number of Bitmaps&quot;. These are
+implemented by the functions getPage() and numPages() respectively.</P>
+<P>
+</P>
+<H3>Reading the contents of a Zip archive file.</H3>
+<P>Android provides two main classes to read a ZIP file,
+ZipInputSteam, and ZipFile. ZipFile provides random read access to a
+Zip file. As we want to be able to move both forward and backward,
+and even jump to a specific page of the comic, this is the class we
+want to use. (ZipInputStream only allows access to the contents of
+the file in a serial fashion, not what we want.)</P>
+<P>
+</P>
+<P>Using the ZipFile class is reasonably simple. Each file stored in
+the archive has corresponding ZipEntry. To extract a file from the
+archive, calling ZipFile.getInputStream() with the appropriate
+ZipEntry will return the file as an InputStream.</P>
+<P>
+</P>
+<P>There are two ways to get a ZipEntry. ZipFile.getEntry(String
+entryName), will return the ZipEntry with the specific name, but
+requires you to know the entryName in advance. The other way is 
+</P>
+<P>ZipFile.entries(), which returns an enumeration that gives you all
+entries. 
+</P>
+<P>
+</P>
+<P>As we wish to access the files in the zip archive in random order,
+the simplest way to achieve this would be to use ZipFile.entries() to
+get all the entries, and place them in an array. Then, to get the
+file that represents page 'n' of the comic we'd simply get the
+ZipEntry held in the 'n'th element of the array, and use this to get
+the InputStream. 
+</P>
+<P>
+</P>
+<P>However, as Android is typically used in mobile devices that are
+memory constrained, instead of storing the ZipEntries themselves in
+an array, the CbzFile class stores the name of each entry in an
+array. Then, when we want a particular page from the archive,
+ZipFile.getEntry() is called with the name to obtain the appropriate
+ZipEntry, which is then used to obtain the InputStream.</P>
+<P>
+</P>
+<P>Once we have an InputStream, converting it into a bitmap is
+trivial. The BitmapFactory class's decodeStream() function does this
+for us.</P>
+<P>
+</P>
+<P>Thus, the most interesting functions in CbzComic are the
+constructor, which builds the array of ZipEntry names, and getPage(),
+which does the index to entryName to ZipEntry mapping and InputStream
+to Bitmap conversion.  There is also getPageAsThumbnail(), which
+shows how to get a page's bitmap that has been scaled down. So it
+could be used, for example, as a thumbnail on a menu.</P>
+<P>
+</P>
+<pre lang="java">
+    public CbzComic(String fileName) {
+        mFileName = fileName;
+        try {
+            // populate mPages with the names of all the ZipEntries
+            mZip = new ZipFile(fileName);
+            mPages = new ArrayList<String>();
+            Enumeration&lt;? extends ZipEntry&gt; entries = mZip.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                if (isImageFile(entry)) {
+                    mPages.add(entry.getName());
+                }
+            }
+        } catch (IOException e) {
+            Log.e(Globals.TAG, "Error opening file", e);
+        }
+    }
+
+    public Bitmap getPage(int pageNum) {
+        Bitmap bitmap = null;
+        try {
+            ZipEntry entry = mZip.getEntry(mPages.get(pageNum));
+            InputStream in = null;
+            try {
+                in = mZip.getInputStream(entry);
+                bitmap = BitmapFactory.decodeStream(in);
+            }  finally {
+                if (in != null) { 
+                    in.close();
+                }
+            }
+        } catch (IOException e) {
+            Log.e(Globals.TAG, "Error loading bitmap", e);
+        }
+        return bitmap;
+    }
+</pre>
+<H2>Viewing the pages of a Comic:</H2>
+<P>The viewing of a comic is between two classes; BitmapView.java,
+and BitmapViewController.java.</P>
+<P>The BitmapView is responsible for showing the page image and
+responding to the user's zoom, pinch and scroll gestures to display
+the appropriate part of the selected image.</P>
+<P>The BitmapViewController is responsible for responding to the
+users fling gestures, to change the currently selected page in the
+BitmapView.  The reason for this division of responsibility is so
+that I could, in the future, easily reuse the BitmapView.  e.g. If I
+wanted to do a photo album browser, (or a web comic viewer) all that
+would be needed is writing a new BitmapViewController that obtains
+the correct bitmaps in response to fling gestures.</P>
+<P>
+</P>
+<P>Linking a BitmapView and BitmapViewController together is done 
+by the following code.</P>
+<pre lang="java">
+    mBitmapView = (BitmapView) findViewById(R.id.comicView);
+    mBitmapController = new BitmapViewController(mBitmapView, (Activity) this);
+    mBitmapView.setController(mBitmapController);
+</pre>
+<P>
+</P>
+<P>The BitmapView is actually a very simple class.  It derives from
+view, and overrides onDraw() to show the currently selected image (or
+part thereof) to the user. Getting the View to react to scroll,
+fling, and zoom and gestures is slightly complicated because the View
+does not receive these gestures as events directly.  Instead, its
+onTouchEvent() is called with MotionEvents, and you need to analyse
+these events to determine the gesture(s) the user is making. 
+However, you can use an android.view.GestureDetector to do this
+analysis work for you.  There are three steps involved.</P>
+<P> 
+</P>
+<P>First, create an anonymous class that derives from
+android.view.GestureDetector.SimpleOnGestureListener. 
+This class has a set of methods that are called when the
+GestureDetector determines a gesture occurs. e.g. onDoubleTap(),
+onScroll(), etc. For each gesture you want to handle, you override that
+function and implement the functionality to handle the gesture.</P>
+<pre lang="java">
+    private SimpleOnGestureListener mGestureListener = new SimpleOnGestureListener() {
+        @Override
+        public boolean onDoubleTap(MotionEvent e) {
+            ZoomInOnPoint(e);
+            return true;
+        }
+
+        @Override
+        public void onLongPress(MotionEvent e) {
+            if (mController != null) {
+                mController.onLongPress();
+            }
+        }
+
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            scrollViewport(distanceX, distanceY);
+            return true;
+        }
+
+        @Override
+        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+            if (mController != null) {
+                mController.onFling(e1, e2, velocityX, velocityY);
+            }
+            return true;
+        }
+    };
+</pre>
+<P>
+</P>
+<P>Next, you create an android.view.GestureDetector, and hook it up
+to the SimpleOnGestureListener.  
+</P>
+<pre lang="java">
+    public BitmapView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        mGestureDetector = new GestureDetector(context, mGestureListener);
+    }
+</pre>
+<P>Finally, you override the view's onTouchEvent() and pass the
+MotionEvents on to the GestureDetector.</P>
+<pre lang="java">
+    public boolean onTouchEvent(MotionEvent event) {
+        mGestureDetector.onTouchEvent(event);
+        return true;
+    }
+</pre>
+<P>
+</P>
+<P>A minor complication is that the GestureDetector does not handle
+&quot;pinch to zoom&quot;,  In order to do that, you need to use a
+ScaleGestureDetector, and its matching 
+SimpleOnScaleGestureListener, in addition to the GestureDetector.</P>
+<P>
+</P>
+<P>As previously mentioned, the BitmapView does not directly handle
+converting flings to &quot;turn the page&quot; actions, this is done
+by the BitmapViewController.  However, as flings are detected by the
+GestureDetector, when they occur, the BitmapView passes them onto the
+BitmapViewController.  There is (yet another) minor issue
+in that we want the user to be able to do both scroll and fling
+gestures and the GestureDetector sometimes interprets a small scroll
+movement as a fling.  Or adds a fling to the end of scroll movement. 
+So, to avoid a page turn when user is just doing a scroll, we check
+that the fling exceeds threshold criteria for length and speed. 
+Note, the thresholds were determined by experimentation, and may not
+be suitable for all users.  Ideally, we'd provide settings, so that
+each user can adjust the thresholds to a value that works best for
+them.</P>
+<pre lang="java">
+    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+        int minDistance = mBitmapView.getWidth() / 4;
+        float minVelocity = minDistance * 6;  
+        float distanceX = Math.abs(e2.getX() - e1.getX()) / 2.0f;
+        if ((minDistance &lt; distanceX) && (minVelocity &lt; Math.abs(velocityX))) {
+            if (0 &lt; velocityX) {
+                backPage();
+            } else {
+                forwardPage();
+            }
+        }
+        return false;
+    }
+</pre>
+<P>
+</P>
+<P>Beyond setting up the GestureDetectors, most of the BitmapView
+code is keeping track of the area of bitmap that should be shown on
+screen, and maths to adjust the area in response to zoom and scroll
+requests.</P>
+<P>
+</P>
+<H2>Viewing list of comic book files.</H2>
+<P>ListComicsActivity.java provides the UI that allows a user to to
+choose the comic to view.  i.e. It provides this UI.</P>
+<img title="ListComicsActivity screenshot" src="comicBookViewer.jpg" border="0" complete="true" />
+<P>
+</P>
+<P>Thus, this class does three tasks:</P>
+<UL>
+	<LI>Find the available .cbz files.</LI>
+	<LI>Show the found files to the user, in a way that allows the
+	user to select one of them</LI>
+	<LI>Return the selection to the main activity.</LI>
+</UL>
+<P>
+</P>
+<P>Finding the .cbz files is a cheat. As this is a minimal viewer, it
+just lists all the files in the &quot;Downloads&quot; directory on
+the SD card. This should really be done via a content provider. (A
+possible future feature.) The code to get a list of the files is
+isMediaAvailable() and listComicFiles(), which load mFileNames with a
+list of the comic book files.</P>
+<pre lang="java">
+    private boolean isMediaAvailable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return true;
+        } else {
+            return Environment.MEDIA_MOUNTED_READ_ONLY.equals(state);
+        }
+    }
+
+    private void listComicFiles() {
+        if (!isMediaAvailable()) {
+            Utility.showToast(this, R.string.sd_card_not_mounted);
+        } else {
+            File path = Environment
+                    .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            mRootPath = path.toString();
+            mFileNames = new ArrayList<String>();
+            String[] filesInDirectory = path.list();
+            if (filesInDirectory != null) {
+                for (String fileName : filesInDirectory) {
+                    mFileNames.add(fileName);
+                }
+            }
+            if (mFileNames.isEmpty()) {
+                Utility.showToast(this, R.string.no_comics_found);
+            }
+        }
+    }
+
+</pre>
+<P>
+</P>
+<P>ListComicsActivity derives from ListActivity, and uses the
+ListActivity to provide the UI.  For the basics of how to use a
+ListActivity see 
+<A HREF="http://www.codeproject.com/Articles/183608/Android-Lists-ListActivity-and-ListView-II-Custom">this article</A>.</P>
+<P>
+</P>
+<P>The major additional points of interest in this class are using a
+background thread to populate the thumbnail on the menu, and
+returning the comic selected by the user to the MainActivity.</P>
+<P>
+</P>
+<P>A background thread is used to load the thumbnail because this
+operation could potentially take a long time, so should not be run on
+the UI thread.  This is implemented by the LoadThumbnailsTask class,
+which derives from android.os.AsyncTask. AsyncTask is well covered by
+<A HREF="http://developer.android.com/reference/android/os/AsyncTask.html">this document by Google</A>
+, so I won't discuss it further.</P>
+<P>
+</P>
+<H3>Returning the comic selected</H3>
+<P>The ListActivity is an activity, and we want it to return a
+result. So, to get it to appear, it's launched from the main activity
+by calling startActivityForResult().</P>
+<pre lang="java">
+    private void launchComicList() {
+        Intent listComicsIntent = new Intent(this, ListComicsActivity.class);
+        startActivityForResult(listComicsIntent, 0);
+    }
+</pre>
+<P>
+</P>
+<P>To return information from ListComicsActivity, you create an
+Intent, add the desired information to the intent, call setResult(),
+and then call finish() to end ListComicsActivity and return to the
+activity that launched ListComicsActivity.</P>
+<pre lang="java">
+    OnClickListener readButtonListener = new OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            String fileName = titleToFileName((String) v.getTag());
+            Intent intent = new Intent();
+            intent.putExtra(FILENAME_EXTRA, fileName);
+            setResult(RESULT_OK, intent);
+            finish();
+        }
+    };
+</pre>
+<P>
+</P>
+<P>When ListComicsActivity ends, onActivityResult() in the activity
+that launched it is called, with the intent from setResult().  So, we
+override onActivityResult() and extract the information from the intent.</P>
+<pre lang="java">
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK) {
+            String fileName = data.getStringExtra(ListComicsActivity.FILENAME_EXTRA);
+            loadComic(fileName, 0);
+        }
+    }
+</pre>
+<P>
+</P>
+<H2 CLASS="western">Bookmark</H2>
+<P>The final feature of this application is the ability to set and
+restore a bookmark.  The most common scenario being, just before
+shutting down the application, the user should be able to tell the
+application to remember the currently displayed comic and page. 
+Later, when the application is restarted, it should return to the
+comic and page.  Bookmark.java is responsible for saving/loading this
+persistent information.</P>
+<P>
+</P>
+<P>Note, if desired, the application could automatically record the
+current position on shutdown by overriding MainActivity.onPause(). 
+It could also store multiple bookmarks, one per comic.  But to keep
+things simple at this time, a bookmark is set by the user selecting
+the "set bookmark" menu item.</P>
+<P>
+<A HREF="http://developer.android.com/guide/topics/data/data-storage.html">As detailed by Google,</A>
+there are several ways of storing persistent information.  The
+simplest is Shared Preferences.  Here's how the Bookmark saves
+and loads the state information using Shared Preferences</P>
+<pre lang="java">
+    public void saveToSharedPreferences(Context context) {
+        if (!isEmpty()) {
+            SharedPreferences settings = context.getSharedPreferences(PREFS_NAME,
+                    Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = settings.edit();
+            editor.putString(PREFS_COMIC_NAME, mComicName);
+            editor.putInt(PREFS_PAGE, mPage);
+            editor.commit();
+        }
+    }
+
+    public Bookmark(Context context) {
+        SharedPreferences settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        mComicName = settings.getString(PREFS_COMIC_NAME, "");
+        mPage = settings.getInt(PREFS_PAGE, -1);
+    }
+</pre>
+<P>
+</P>
+<P>In addition to storing state persistently, in order to handle the
+screen orientation changing (i.e. going from landscape to portrait
+and vice versa), we also need to be able to save the state to a
+Bundle.  This is because, when the device is rotated, Android expects
+you to save the state to bundle.  Android then restarts your app,
+passing in the bundle, which your app uses to restore its state.</P>
+<P>In slightly more detail, when the device is rotated,
+onSaveInstanceState() in you activity is called.  You need to
+override this function and save any state you need persisted into the
+supplied Bundle.  In our case, the state information we want is the
+comic and page currently being viewed.</P>
+<P>After calling onSaveInstanceState, the OS will change the
+orientation and restart your application, calling onCreate() with the bundle from
+onSaveInstanceState().  Note, onCreate() is also called when your
+application starts. But, when it's starting, bundle is null.  Thus,
+the standard implementation of onCreate() should check if the bundle
+is null or not.  If it's not null, then the app should restore its
+state, using the information in the bundle.</P>
+<P>Here's how the Bookmark saves and loads state information to a
+bundle, note how the code is almost identical to that used for Shared
+Preferences.  (Oddly, SharedPreferences and Bundles are not related.)
+</P>
+<pre lang="java">
+    public void save(Bundle outState) {
+        if (!isEmpty()) {
+            outState.putString(PREFS_COMIC_NAME, mComicName);
+            outState.putInt(PREFS_PAGE, mPage);
+        }
+    }
+
+    public Bookmark(Bundle savedInstanceState) {
+        mComicName = savedInstanceState.getString(PREFS_COMIC_NAME);
+        mPage = savedInstanceState.getInt(PREFS_PAGE);
+    }
+</pre>
+<P>
+</P>
+<P>And in our main activity, the code is:</P>
+<pre lang="java">
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        mBitmapController.getBookmark().save(outState);
+    }
+
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        mBitmapView = (BitmapView) findViewById(R.id.comicView);
+        mBitmapController = new BitmapViewController(mBitmapView, (Activity) this);
+        mBitmapView.setController(mBitmapController);
+
+        if (savedInstanceState != null) {
+            // screen orientation changed, reload
+            loadComic(new Bookmark(savedInstanceState));
+        } else {
+            // app has just been started.
+            // If a bookmark has been saved, go to it, else, ask user for comic
+            // to view
+            Bookmark bookmark = new Bookmark(this);
+            if (bookmark.isEmpty()) {
+                launchComicList();
+            } else {
+                loadComic(bookmark);
+            }
+        }
+    }
+</pre>
+<P>
+</P>
+<H2 CLASS="western">Main Activity</H2>
+<P>MainActivity.java is, well, the application's main activity. It's
+the activity that is first started when the application starts.  It
+uses the BitmapView as its view, creates the main menu and responds
+to user selecting menu actions, and responding to user changing the
+screen between landscape and portrait.</P>
+
+<h2>License</h2>
+<p>This article, along with any associated source code and files, is licensed under 
+<a href="http://www.codeproject.com/info/cpol10.aspx" rel="license">The Code Project Open License (CPOL)</a></p>
+</BODY>
+</HTML>
