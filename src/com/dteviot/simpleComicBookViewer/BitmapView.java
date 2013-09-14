@@ -37,16 +37,6 @@ public class BitmapView extends View {
     private float mInitialScaleFactor = 1.0f;
 
     /*
-     * When zoom reaches this, we know that bitmap is covering whole screen
-     */
-    private float mFullScreenScaleFactor = 1.0f;
-    
-    /*
-     * Bitmap always fills width of screen?
-     */
-    private boolean mIsLandscape = false;
-    
-    /*
      * Zoom factor user has requested
      */
     private float mZoomFactor = 1.0f;
@@ -208,14 +198,10 @@ public class BitmapView extends View {
                 // screen is landscape (compared to bitmap) so height is
                 // limiting factor
                 mInitialScaleFactor = heightRatio;
-                mIsLandscape = false;
-                mFullScreenScaleFactor = widthRatio / heightRatio; 
             } else {
                 // screen is portrait (compared to bitmap), so width is limiting
                 // factor
                 mInitialScaleFactor = widthRatio;
-                mIsLandscape = true;
-                mFullScreenScaleFactor = heightRatio / widthRatio; 
             }
             mZoomFactor = 1.0f;
             mScrollOffset = new PointF(0.0f, 0.0f);
@@ -253,24 +239,20 @@ public class BitmapView extends View {
      * Prevent user from scrolling off the bitmap 
      */
     private void clampView() {
-        // compute screen dimensions in bitmap pixels
-        float scaleFactor = (mZoomFactor * mInitialScaleFactor);
-        float widthMargin = mRawScreenDimensions.width() / scaleFactor;  
-        float heightMargin = mRawScreenDimensions.height() / scaleFactor;
+        // figure out number of bitmap pixels the screen shows
+        float scaleFactor = mZoomFactor * mInitialScaleFactor;
+        float screenWidth = mRawScreenDimensions.width() / scaleFactor;  
+        float screenHeight = mRawScreenDimensions.height() / scaleFactor;
         
-        // now compute scroll limits, to keep bitmap within screen
-        float maxX = (mBitmap.getWidth() - widthMargin) / 2;
-        float maxY = (mBitmap.getHeight() - heightMargin) / 2;
+        // Compute horizontal scroll limit, to keep bitmap within screen
+        //... If projected bitmap doesn't span whole screen width, don't allow 
+        //... horizontal scroll, just centre it horizontally. (i.e. scollOffset = 0) 
+        //... When doesn't span screen, bitmap pixels < screen pixels 
+        float maxX = Math.max(0.0f, (mBitmap.getWidth() - screenWidth) / 2);
         
-        // if bitmap doesn't fill screen horizontal or vertical, then can't 
-        // scroll along that dimension
-        if (mZoomFactor < mFullScreenScaleFactor) {
-            if (mIsLandscape) {
-                maxY = 0.0f;
-            } else {
-                maxX = 0.0f;
-            }
-        }
+        // Same logic for vertical scroll
+        float maxY = Math.max(0.0f, (mBitmap.getHeight() - screenHeight) / 2);
+        
         float minX = -maxX;
         float minY = -maxY;
         
