@@ -1,8 +1,10 @@
 package com.dteviot.simpleComicBookViewer;
 
+import android.annotation.TargetApi;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.view.MotionEvent;
 
 public class BitmapViewController implements IBitmapViewController {
@@ -79,14 +81,15 @@ public class BitmapViewController implements IBitmapViewController {
     /*
      * Hide/Show action bar.
      */
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     private void toggleActionBarVisibility() {
-        // this code requires Android 3.0 and above
-        // remove comments, if you want long press to toggle the menu bar
-        ActionBar actionBar = mActivity.getActionBar();
-        if (actionBar.isShowing()) {
-            actionBar.hide();
-        } else {
-            actionBar.show();
+        if (android.os.Build.VERSION_CODES.HONEYCOMB <= android.os.Build.VERSION.SDK_INT) {
+	        ActionBar actionBar = mActivity.getActionBar();
+	        if (actionBar.isShowing()) {
+	            actionBar.hide();
+	        } else {
+	            actionBar.show();
+	        }
         }
     }
 
